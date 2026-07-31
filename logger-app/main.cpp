@@ -149,35 +149,57 @@ namespace
 
 int main(int argc, char** argv)
 {
-    if (argc != 3)
-    {
-        printUsage(argc > 0 ? argv[0] : "logger_app");
-        return 1;
-    }
+    if (argc != 3 && argc != 4)
+	{
+		printUsage(argc > 0 ? argv[0] : "logger_app");
+		return 1;
+	}
 
-    const std::string logFile = argv[1];
+	const std::string logFile = argv[1];
 
-    liblog::LogLevels defaultLevel;
-    if (!parseLevel(argv[2], defaultLevel))
-    {
-        std::cerr << "Неизвестный уровень важности: " << argv[2] << '\n';
-        printUsage(argv[0]);
-        return 1;
-    }
+	liblog::LogLevels defaultLevel;
+	if (!parseLevel(argv[2], defaultLevel))
+	{
+		std::cerr << "Неизвестный уровень важности: " << argv[2] << '\n';
+		printUsage(argv[0]);
+		return 1;
+	}
 
-    std::unique_ptr<liblog::FileWorker> worker(new liblog::FileWorker());
-    if (worker->init(logFile) != 0)
-    {
-        std::cerr << "Не удалось открыть файл журнала: " << logFile << '\n';
-        return 1;
-    }
+    std::unique_ptr<liblog::WriteWorkerInterface> worker;
 
-    liblog::Logger logger;
-    if (logger.init(std::unique_ptr<liblog::WriteWorkerInterface>(worker.release()), defaultLevel) != 0)
-    {
-        std::cerr << "Не удалось инициализировать журнал\n";
-        return 1;
-    }
+	if (argc == 4)
+	{
+		std::unique_ptr<liblog::UdsWorker> uds(new liblog::UdsWorker());
+		const int rc = uds->init(argv[3]);
+		if (rc == -2)
+		{
+			std::cerr << "По этому пути никто не слушает: " << argv[3] << '\n';
+			return 1;
+		}
+		if (rc != 0)
+		{
+			std::cerr << "Не удалось подключиться к сокету: " << argv[3] << '\n';
+			return 1;
+		}
+		worker.reset(uds.release());
+	}
+	else
+	{
+		std::unique_ptr<liblog::FileWorker> file(new liblog::FileWorker());
+		if (file->init(logFile) != 0)
+		{
+			std::cerr << "Не удалось открыть файл журнала: " << logFile << '\n';
+			return 1;
+		}
+		worker.reset(file.release());
+	}
+
+	liblog::Logger logger;
+	if (logger.init(std::move(worker), defaultLevel) != 0)
+	{
+		std::cerr << "Не удалось инициализировать журнал\n";
+		return 1;
+	}
 
     std::mutex mutex;
     std::queue<Record> queue;

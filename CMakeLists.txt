@@ -55,10 +55,8 @@ if(LIBLOG_BUILD_APPS)
     add_executable(logger-app logger-app/main.cpp)
     target_link_libraries(logger-app PRIVATE liblog::shared Threads::Threads liblog_warnings)
 
-    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/stats_app/main.cpp)
-        add_executable(stats_app stats_app/main.cpp)
-        target_link_libraries(stats_app PRIVATE Threads::Threads liblog_warnings)
-    endif()
+    add_executable(stats-app stats-app/main.cpp)
+    target_link_libraries(stats-app PRIVATE liblog_warnings)
 endif()
 
 if(LIBLOG_BUILD_TESTS)
