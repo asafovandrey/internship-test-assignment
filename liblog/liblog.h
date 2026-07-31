@@ -7,63 +7,63 @@
 
 namespace liblog
 {
-	enum class LogLevels : unsigned char
-	{
-		Error, Warning, Info
-	};
+    enum class LogLevels : unsigned char
+    {
+        Error, Warning, Info
+    };
 
-	class WriteWorkerInterface
-	{
-	public:
-		virtual int log(LogLevels logLevel, const std::string& msg, std::chrono::system_clock::time_point timestamp) = 0;
-		virtual ~WriteWorkerInterface() = default;
+    class WriteWorkerInterface
+    {
+    public:
+        virtual int log(LogLevels logLevel, const std::string& msg, std::chrono::system_clock::time_point timestamp) = 0;
+        virtual ~WriteWorkerInterface() = default;
 
-		WriteWorkerInterface(const WriteWorkerInterface&) = delete;
-		WriteWorkerInterface& operator=(const WriteWorkerInterface&) = delete;
+        WriteWorkerInterface(const WriteWorkerInterface&) = delete;
+        WriteWorkerInterface& operator=(const WriteWorkerInterface&) = delete;
 
-	protected:
-		WriteWorkerInterface() = default;
+    protected:
+        WriteWorkerInterface() = default;
 
-		static std::string prepare_record(LogLevels logLevel, const std::string& msg, std::chrono::system_clock::time_point timestamp);
-	};
+        static std::string prepare_record(LogLevels logLevel, const std::string& msg, std::chrono::system_clock::time_point timestamp);
+    };
 
-	class FileWorker final : public WriteWorkerInterface
-	{
-		std::ofstream fout;
-		bool inited = false;
-	public:
-		int init(const std::string& filename);
-		bool ready();
+    class FileWorker final : public WriteWorkerInterface
+    {
+        std::ofstream fout;
+        bool inited = false;
+    public:
+        int init(const std::string& filename);
+        bool ready();
 
-		int log(LogLevels logLevel, const std::string& msg, std::chrono::system_clock::time_point timestamp) override;
-	};
+        int log(LogLevels logLevel, const std::string& msg, std::chrono::system_clock::time_point timestamp) override;
+    };
 
-	class UdsWorker final : public WriteWorkerInterface
-	{
-		int fd_ = -1;
+    class UdsWorker final : public WriteWorkerInterface
+    {
+        int fd_ = -1;
 
-	public:
-		UdsWorker() = default;
-		~UdsWorker() override;
+    public:
+        UdsWorker() = default;
+        ~UdsWorker() override;
 
-		int init(const std::string& socket_path);
-		int log(LogLevels logLevel, const std::string& msg, std::chrono::system_clock::time_point timestamp) override;
-		bool ready();
-	};
+        int init(const std::string& socket_path);
+        int log(LogLevels logLevel, const std::string& msg, std::chrono::system_clock::time_point timestamp) override;
+        bool ready();
+    };
 
-	class Logger
-	{		
+    class Logger
+    {        
 
-		std::unique_ptr<WriteWorkerInterface> writeWorker_;
-		LogLevels logLevel_;
-		bool inited = false;
+        std::unique_ptr<WriteWorkerInterface> writeWorker_;
+        LogLevels logLevel_;
+        bool inited = false;
 
-	public:
-		int init(std::unique_ptr<WriteWorkerInterface> wwi, const LogLevels logLevel);
-		bool ready();
+    public:
+        int init(std::unique_ptr<WriteWorkerInterface> wwi, const LogLevels logLevel);
+        bool ready();
 
-		void changeLogLevel(const LogLevels logLevel);
+        void changeLogLevel(const LogLevels logLevel);
 
-		int log(LogLevels logLevel, const std::string& msg, std::chrono::system_clock::time_point timestamp);
-	};
+        int log(LogLevels logLevel, const std::string& msg, std::chrono::system_clock::time_point timestamp);
+    };
 }
